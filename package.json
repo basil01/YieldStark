@@ -29,9 +29,20 @@
     "verify": "yarn workspace @ss-2/snfoundry verify"
   },
   "dependencies": {
-    "postcss": "^8.4.38"
+    "@kasarlabs/snak": "^0.0.11",
+    "@react-three/drei": "^10.0.8",
+    "@react-three/fiber": "latest",
+    "@starknet-react/core": "latest",
+    "next": "^15.3.2",
+    "postcss": "^8.4.38",
+    "react": "18",
+    "react-dom": "18",
+    "starknet": "latest",
+    "three": "^0.176.0"
   },
   "devDependencies": {
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
     "daisyui": "^4.7.3",
     "husky": "^9.0.11",
     "pinst": "^3.0.0",

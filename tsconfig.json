@@ -1,0 +1,8 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@agent/*": ["src/agent/*"]
+    }
+  }
+} 

@@ -264,6 +264,11 @@ const universalErc20Abi = [
 
 export const LAST_CONNECTED_TIME_LOCALSTORAGE_KEY = "lastConnectedTime";
 
+// Vesu constants
+export const VESU_SINGLETON = "0x01ecab07456147a8de92b9273dd6789893401e8462a737431493980d9be6827";
+export const VESU_GENESIS_POOL = "730993554056884283224259059297934576024721456828383733531590831263129347422";
+export const WBTC = "0x00abbd6f1e590eb83addd87ba5ac27960d859b1f17d11a3c1cd6a0006704b141";
+
 export {
   devnetStrkClassHash,
   universalStrkAddress,

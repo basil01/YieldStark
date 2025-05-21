@@ -28,72 +28,28 @@ export const Footer = () => {
     targetNetwork.network === mainnet.network;
 
   return (
-    <div className="min-h-0 py-5 px-1 mb-11 lg:mb-0 bg-base-100">
-      <div>
-        <div className="fixed flex justify-between items-center w-full z-10 p-4 bottom-0 left-0 pointer-events-none">
-          <div className="flex flex-col md:flex-row gap-2 pointer-events-auto">
-            {isSepoliaNetwork && (
-              <>
-                <FaucetSepolia />
-                <BlockExplorerSepolia />
-              </>
-            )}
-            {isLocalNetwork && (
-              <>
-                <Faucet />
-              </>
-            )}
-            {isMainnetNetwork && (
-              <>
-                <BlockExplorer />
-              </>
-            )}
-            <Link
-              href={"/configure"}
-              passHref
-              className="btn btn-sm font-normal gap-1 cursor-pointer border border-[#32BAC4] shadow-none"
-            >
-              <Cog8ToothIcon className="h-4 w-4 text-[#32BAC4]" />
-              <span>Configure Contracts</span>
+    <footer className="bg-black border-t border-gray-800">
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex flex-col md:flex-row justify-between items-center">
+          <div className="text-gray-400 mb-4 md:mb-0">
+            Built with ❤️ by YieldStark Team
+          </div>
+          <div className="flex space-x-6">
+            <Link href="https://github.com/yieldstark" target="_blank" className="text-gray-400 hover:text-purple-400 transition">
+              GitHub
             </Link>
-            {nativeCurrencyPrice > 0 && (
-              <div>
-                <div className="btn btn-sm font-normal gap-1 cursor-auto border border-[#32BAC4] shadow-none">
-                  <CurrencyDollarIcon className="h-4 w-4 text-[#32BAC4]" />
-                  <span>{nativeCurrencyPrice}</span>
-                </div>
-              </div>
-            )}
+            <Link href="https://twitter.com/yieldstark" target="_blank" className="text-gray-400 hover:text-purple-400 transition">
+              Twitter
+            </Link>
+            <Link href="https://docs.yieldstark.com" target="_blank" className="text-gray-400 hover:text-purple-400 transition">
+              Docs
+            </Link>
           </div>
         </div>
+        <div className="mt-4 text-center text-gray-500 text-sm">
+          © {new Date().getFullYear()} YieldStark. All rights reserved.
+        </div>
       </div>
-      <div className="w-full">
-        <ul className="menu menu-horizontal w-full">
-          <div className="flex justify-center items-center gap-2 text-sm w-full">
-            <div className="text-center">
-              <a
-                href="https://github.com/Scaffold-Stark/scaffold-stark-2"
-                target="_blank"
-                rel="noreferrer"
-                className="link"
-              >
-                Fork me
-              </a>
-            </div>
-
-            <div className="text-center">
-              <a
-                href="https://t.me/+wO3PtlRAreo4MDI9"
-                target="_blank"
-                rel="noreferrer"
-                className="link"
-              >
-                Support
-              </a>
-            </div>
-          </div>
-        </ul>
-      </div>
-    </div>
+    </footer>
   );
 };

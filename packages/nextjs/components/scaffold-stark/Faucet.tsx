@@ -10,9 +10,9 @@ import {
   StarkInput,
 } from "~~/components/scaffold-stark";
 import { useNetwork, useProvider } from "@starknet-react/core";
-import { mintStrk } from "~~/services/web3/faucet";
 import { notification } from "~~/utils/scaffold-stark";
 import GenericModal from "./CustomConnectButton/GenericModal";
+import { mintStrk } from "../../services/web3/faucet";
 
 /**
  * Faucet modal which lets you send STRK to any address.

@@ -3,7 +3,6 @@ import { getTargetNetworks } from "~~/utils/scaffold-stark";
 import { BurnerConnector } from "@scaffold-stark/stark-burner";
 import scaffoldConfig from "~~/scaffold.config";
 import { LAST_CONNECTED_TIME_LOCALSTORAGE_KEY } from "~~/utils/Constants";
-import { KeplrConnector } from "./keplr";
 import { supportedChains } from "~~/supportedChains";
 
 const targetNetworks = getTargetNetworks();
@@ -25,20 +24,21 @@ function withDisconnectWrapper(connector: InjectedConnector) {
 function getConnectors() {
   const { targetNetworks } = scaffoldConfig;
 
+  // Always enable Argent and Braavos
   const connectors: InjectedConnector[] = [argent(), braavos()];
   const isDevnet = targetNetworks.some(
     (network) => (network.network as string) === "devnet",
   );
 
-  if (!isDevnet) {
-    connectors.push(new KeplrConnector());
-  } else {
+  // Enable Burner only for devnet
+  if (isDevnet) {
     const burnerConnector = new BurnerConnector();
     burnerConnector.chain = supportedChains.devnet;
     connectors.push(burnerConnector as unknown as InjectedConnector);
   }
 
-  return connectors.sort(() => Math.random() - 0.5).map(withDisconnectWrapper);
+  // No Keplr, no randomization
+  return connectors.map(withDisconnectWrapper);
 }
 
 export const appChains = targetNetworks;
