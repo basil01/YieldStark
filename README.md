@@ -160,9 +160,9 @@ Detailed documentation is available in the `docs` directory:
 
 ## 📈 Performance
 
--2–4x higher BTC yield compared to passive strategies
--100% automated strategy rotation powered by real-time Pragma feeds
--Rebalancing logic optimized for gas-efficiency and execution success
+   -Up to 4x higher BTC yield compared to passive strategies
+   -100% automated strategy rotation powered by real-time Pragma feeds
+   -Rebalancing logic optimized for gas-efficiency and execution success
 
 ## 🛣 Roadmap
 
