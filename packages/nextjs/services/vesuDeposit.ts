@@ -2,7 +2,7 @@ import { Contract, WalletAccount, Call, RpcProvider, uint256, AccountInterface }
 import { shortString } from "starknet";
 
 // Addresses and ABIs
-const WBTC_ADDRESS = "0x00abbd6f1e590eb83addd87ba5ac27960d859b1f17d11a3c1cd6a0006704b141";
+const WBTC_1 = "0x00abbd6f1e590eb83addd87ba5ac27960d859b1f17d11a3c1cd6a0006704b141";
 const VWBTC_ADDRESS = "0x076ce66eba78210a836fca94ab91828c0f6941ad88585a700f3e473a9b4af870";
 const RPC_URL = "https://starknet-sepolia.public.blastapi.io";
 
@@ -1205,7 +1205,7 @@ export const getDepositCalls = (
 ): Call[] => {
   const provider = new RpcProvider({ nodeUrl: RPC_URL });
   const vtokenContract = getVTokenContract(VWBTC_ADDRESS, provider);
-  const tokenContract = getERC20Contract(WBTC_ADDRESS, provider);
+  const tokenContract = getERC20Contract(WBTC_1, provider);
 
   const approveVTokenCall = tokenContract.populate("approve", [
     VWBTC_ADDRESS,

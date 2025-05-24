@@ -1,45 +1,45 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { CheckmarkAnimation } from './CheckmarkAnimation';
 
 interface YieldStarkDepositModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onDeposit: (amount: string) => void;
-  maxBalance?: string;
+  onDeposit: (amount: string) => Promise<void>;
+  maxBalance: string;
+  txHash?: string | null;
 }
 
-export const YieldStarkDepositModal: React.FC<YieldStarkDepositModalProps> = ({ 
-  isOpen,
-  onClose,
-  onDeposit,
-  maxBalance = "0"
-}) => {
+export const YieldStarkDepositModal = ({ isOpen, onClose, onDeposit, maxBalance, txHash }: YieldStarkDepositModalProps) => {
   const [amount, setAmount] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setAmount(value);
-    // Validate amount
-    if (value) {
-      const numValue = parseFloat(value);
-      const maxValue = parseFloat(maxBalance);
-      if (isNaN(numValue)) {
-        setError('Please enter a valid number');
-      } else if (numValue <= 0) {
-        setError('Amount must be greater than 0');
-      } else if (numValue > maxValue) {
-        setError(`Amount cannot exceed your balance of ${maxBalance} wBTC`);
-      } else {
-        setError(null);
-      }
-    } else {
+  // Reset state when modal is closed
+  useEffect(() => {
+    if (!isOpen) {
+      setAmount('');
+      setIsLoading(false);
+      setIsSuccess(false);
       setError(null);
     }
-  };
+  }, [isOpen]);
 
-  const handleDeposit = () => {
-    if (!error && amount) {
-      onDeposit(amount);
+  const handleDeposit = async () => {
+    if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
+      setError('Please enter a valid amount');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      setError(null);
+      await onDeposit(amount);
+      setIsSuccess(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to deposit');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -48,50 +48,73 @@ export const YieldStarkDepositModal: React.FC<YieldStarkDepositModalProps> = ({
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-8 max-w-md w-full">
-        <h2 className="text-2xl font-bold mb-4 text-black">Deposit to YieldStark</h2>
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Amount (wBTC)
-          </label>
-          <div className="relative">
-            <input
-              type="number"
-              value={amount}
-              onChange={handleAmountChange}
-              className="w-full p-2 border rounded"
-              placeholder="Enter amount"
-              min="0"
-              step="0.00000001"
-            />
-            <button 
-              onClick={() => setAmount(maxBalance)}
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 text-sm text-purple-600 hover:text-purple-700"
+        <h2 className="text-2xl text-black font-bold mb-2">YieldStark Your wBTC</h2>
+        <p className="text-gray-600 mb-4">Input the amount of BTC you want YieldStark to use</p>
+        
+        {isSuccess ? (
+          <div className="text-center">
+            <CheckmarkAnimation show={true} />
+            <p className="text-green-600 font-semibold mt-4">Deposit Successful!</p>
+            {txHash && (
+              <a 
+                href={`https://starkscan.co/tx/${txHash}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:text-blue-800 mt-2 inline-block"
+              >
+                View transaction on Starkscan
+              </a>
+            )}
+            <button
+              onClick={onClose}
+              className="mt-4 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded"
             >
-              MAX
+              Close
             </button>
           </div>
-          {error && (
-            <p className="mt-2 text-sm text-red-600">{error}</p>
-          )}
-          <p className="mt-2 text-sm text-gray-500">
-            Available: {maxBalance} wBTC
-          </p>
-        </div>
-        <div className="flex justify-end space-x-4">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-gray-600 hover:text-gray-800 border border-gray-300 rounded"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleDeposit}
-            className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50"
-            disabled={!amount || !!error}
-          >
-            Deposit
-          </button>
-        </div>
+        ) : (
+          <>
+            <div className="mb-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2">
+                Amount (wBTC)
+              </label>
+              <input
+                type="number"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-800 leading-tight focus:outline-none focus:shadow-outline bg-white"
+                placeholder="Enter amount"
+                disabled={isLoading}
+              />
+              <p className="text-sm text-gray-500 mt-1">
+                Available: {maxBalance} wBTC
+              </p>
+            </div>
+
+            {error && (
+              <div className="text-red-500 mb-4">
+                {error}
+              </div>
+            )}
+
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={onClose}
+                className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded"
+                disabled={isLoading}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeposit}
+                disabled={isLoading || !amount}
+                className="bg-blue-500 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded disabled:opacity-50"
+              >
+                {isLoading ? 'Processing...' : 'Deposit'}
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

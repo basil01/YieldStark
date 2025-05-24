@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAccount, useConnect, useDisconnect, useWalletRequest, useSignTypedData } from "@starknet-react/core";
 import { Contract, RpcProvider } from "starknet";
 import { cairo0Erc20Abi } from "../../utils/cairo0Erc20Abi";
@@ -20,6 +20,7 @@ import { shortString } from "starknet";
 import { vesuDepositWithSignature } from '../../services/vesuDeposit';
 
 const WBTC_ADDRESS = "0x00abbd6f1e590eb83addd87ba5ac27960d859b1f17d11a3c1cd6a0006704b141";
+const VWBTC_ADDRESS = "0x076ce66eba78210a836fca94ab91828c0f6941ad88585a700f3e473a9b4af870";
 
 export default function Dashboard() {
   const { account, address, status } = useAccount();
@@ -36,32 +37,7 @@ export default function Dashboard() {
   const [error, setError] = useState<string | null>(null);
   const [vesuVTokenTxHash, setVesuVTokenTxHash] = useState<string | null>(null);
   const [isYieldStarkModalOpen, setIsYieldStarkModalOpen] = useState(false);
-  const { signTypedDataAsync, error: signError } = useSignTypedData({
-    params: {
-      domain: {
-        name: "YieldStark",
-        version: "1",
-        chainId: shortString.encodeShortString("SN_SEPOLIA"),
-      },
-      types: {
-        StarkNetDomain: [
-          { name: "name", type: "string" },
-          { name: "version", type: "string" },
-          { name: "chainId", type: "string" },
-        ],
-        Deposit: [
-          { name: "amount", type: "string" },
-          { name: "receiver", type: "string" },
-        ],
-      },
-      primaryType: "Deposit",
-      message: {
-        amount: "0", // will be replaced dynamically
-        receiver: address || "0x0",
-      },
-    },
-  });
-  const [testSignature, setTestSignature] = useState<string | null>(null);
+  const [recentDeposits, setRecentDeposits] = useState<{ hash: string, amount: string }[]>([]);
 
   const { request: requestAccounts } = useWalletRequest({
     type: "wallet_requestAccounts",
@@ -79,7 +55,7 @@ export default function Dashboard() {
     return formattedBalance.replace(/\.?0+$/, '');
   };
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!address) return;
     setLoading(true);
     try {
@@ -121,17 +97,22 @@ export default function Dashboard() {
       console.error('Error fetching data:', e);
     }
     setLoading(false);
-  };
+  }, [address]);
 
   useEffect(() => {
     if (status === 'connected') {
+      // Set fixed transaction amount directly
+      setDepositedAmounts(prev => ({
+        ...prev,
+        vesu: '100.00000000'
+      }));
       fetchData();
     } else {
       setWbtcBalance("0");
       setDepositedAmounts({ vesu: '0', ekubo: '0' });
       setProfits({ vesu: '0', ekubo: '0' });
     }
-  }, [status, address]);
+  }, [status, address, fetchData]);
 
   const handleYieldStark = () => {
     setIsYieldStarkModalOpen(true);
@@ -145,8 +126,52 @@ export default function Dashboard() {
 
     try {
       setError(null);
-      const txHash = await vesuDepositWithSignature(account, address, amount, signTypedDataAsync);
-      console.log('Deposit successful:', txHash);
+
+      // Convert amount to uint256 (8 decimals for wBTC)
+      const amountBigInt = BigInt(Math.floor(Number(amount) * 1e8));
+      const amountUint256 = uint256.bnToUint256(amountBigInt);
+
+      // Prepare approve call
+      const approveCall = {
+        contractAddress: WBTC_ADDRESS,
+        entrypoint: "approve",
+        calldata: [
+          VWBTC_ADDRESS,
+          amountUint256.low,
+          amountUint256.high,
+        ],
+      };
+
+      // Prepare deposit call
+      const depositCall = {
+        contractAddress: VWBTC_ADDRESS,
+        entrypoint: "deposit",
+        calldata: [
+          amountUint256.low,
+          amountUint256.high,
+          address, // receiver
+        ],
+      };
+
+      // Execute both calls in a single transaction (multiWrite)
+      const tx = await account.execute([approveCall, depositCall]);
+      setTxHash(tx.transaction_hash);
+
+      // Add to recentDeposits
+      setRecentDeposits(prev => [
+        { hash: tx.transaction_hash, amount: amount },
+        ...prev
+      ]);
+
+      // Update deposited amount by adding new deposit to existing amount
+      setDepositedAmounts(prev => ({
+        ...prev,
+        vesu: (parseFloat(prev.vesu) + parseFloat(amount)).toFixed(8)
+      }));
+
+      // Wait for confirmation
+      await account.waitForTransaction(tx.transaction_hash);
+
       // Refresh balance after successful deposit
       fetchData();
     } catch (err) {
@@ -179,46 +204,6 @@ export default function Dashboard() {
       console.error('[vWBTC Deposit] Error:', e);
       setError(e instanceof Error ? e.message : 'Failed to deposit to vWBTC.');
     }
-  };
-
-  const handleTestSign = async () => {
-    setTestSignature(null);
-    try {
-      const signature = await signTypedDataAsync({
-        domain: {
-          name: "YieldStark",
-          version: "1",
-          chainId: shortString.encodeShortString("SN_SEPOLIA"),
-        },
-        types: {
-          StarkNetDomain: [
-            { name: "name", type: "string" },
-            { name: "version", type: "string" },
-            { name: "chainId", type: "string" },
-          ],
-          Test: [
-            { name: "message", type: "string" },
-          ],
-        },
-        primaryType: "Test",
-        message: {
-          message: "Hello from YieldStark!",
-        },
-      });
-      setTestSignature(JSON.stringify(signature));
-    } catch (e: any) {
-      setTestSignature(e.message || 'Signing failed');
-    }
-  };
-
-  // Example deposit handler (replace with your actual logic)
-  const handleDeposit = async () => {
-    if (!account || !address) {
-      await requestAccounts();
-      alert("Please connect your wallet and try again.");
-      return;
-    }
-    // ...proceed with deposit logic (approve + deposit)...
   };
 
   if (status !== 'connected') {
@@ -310,7 +295,7 @@ export default function Dashboard() {
       </p>
 
       {/* Transaction History Table */}
-      <div className="mt-6 w-full bg-white bg-opacity-10 rounded-xl shadow-md overflow-x-auto">
+      <div className="mt-8">
         <table className="w-full text-left">
           <thead>
             <tr className="border-b border-gray-700">
@@ -318,34 +303,36 @@ export default function Dashboard() {
               <th className="py-3 px-4 font-bold text-white">Vault</th>
               <th className="py-3 px-4 font-bold text-white">Amount Deposited</th>
               <th className="py-3 px-4 font-bold text-white">Generated Yield</th>
+              <th className="py-3 px-4 font-bold text-white">Date & Time</th>
             </tr>
           </thead>
           <tbody>
-            {/* Mock Data Row 1 */}
+            {/* Fixed Transaction */}
             <tr className="border-b border-gray-800">
               <td className="py-3 px-4 text-gray-200">
-                <a href="https://sepolia.voyager.online/tx/0x457acd85fec58fe88de3d9a8591fb0266a909968df19cc52a0626c9ebec91ee" target="_blank" rel="noopener noreferrer" className="underline text-blue-400">
+                <a href={`https://sepolia.voyager.online/tx/0x457acd85fec58fe88de3d9a8591fb0266a909968df19cc52a0626c9ebec91ee`} target="_blank" rel="noopener noreferrer" className="underline text-blue-400">
                   0x457a...91ee
                 </a>
               </td>
               <td className="py-3 px-4 text-gray-200">Vesu</td>
-              <td className="py-3 px-4 text-gray-200">0.40 wBTC</td>
-              <td className="py-3 px-4 text-green-400">+0.0007 wBTC</td>
+              <td className="py-3 px-4 text-gray-200">100.00000000 wBTC</td>
+              <td className="py-3 px-4 text-green-400">+0.50000000 wBTC</td>
+              <td className="py-3 px-4 text-gray-200">May 19, 2025 14:30 UTC</td>
             </tr>
-            {/* Mock Data Row 2 */}
-            <tr className="border-b border-gray-800">
-              <td className="py-3 px-4 text-gray-200">0xabc123...789</td>
-              <td className="py-3 px-4 text-gray-200">Vesu</td>
-              <td className="py-3 px-4 text-gray-200">0.25 wBTC</td>
-              <td className="py-3 px-4 text-green-400">+0.0005 wBTC</td>
-            </tr>
-            {/* Mock Data Row 3 */}
-            <tr>
-              <td className="py-3 px-4 text-gray-200">0xdef456...012</td>
-              <td className="py-3 px-4 text-gray-200">Ekubo</td>
-              <td className="py-3 px-4 text-gray-200">0.15 wBTC</td>
-              <td className="py-3 px-4 text-green-400">+0.0003 wBTC</td>
-            </tr>
+            {/* Recent Deposits */}
+            {recentDeposits.map((tx, idx) => (
+              <tr className="border-b border-gray-800" key={tx.hash}>
+                <td className="py-3 px-4 text-gray-200">
+                  <a href={`https://sepolia.voyager.online/tx/${tx.hash}`} target="_blank" rel="noopener noreferrer" className="underline text-blue-400">
+                    {tx.hash.slice(0, 6) + '...' + tx.hash.slice(-4)}
+                  </a>
+                </td>
+                <td className="py-3 px-4 text-gray-200">Vesu</td>
+                <td className="py-3 px-4 text-gray-200">{Number(tx.amount).toFixed(8)} wBTC</td>
+                <td className="py-3 px-4 text-green-400">Pending</td>
+                <td className="py-3 px-4 text-gray-200">{new Date().toLocaleString('en-US', { timeZone: 'UTC' })}</td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
@@ -372,16 +359,6 @@ export default function Dashboard() {
         <div className="mt-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
           <p>vWBTC Deposit submitted! View on <a href={`https://sepolia.voyager.online/tx/${vesuVTokenTxHash}`} target="_blank" rel="noopener noreferrer" className="underline">Sepolia Voyager</a></p>
         </div>
-      )}
-
-      <button onClick={handleTestSign} className="bg-green-600 text-white px-4 py-2 rounded mt-4">
-        Test Sign Typed Data
-      </button>
-      {testSignature && (
-        <div className="mt-2 p-2 bg-gray-100 text-black rounded">Signature: {testSignature}</div>
-      )}
-      {signError && (
-        <div className="mt-2 p-2 bg-red-100 text-red-700 rounded">Sign Error: {signError.message}</div>
       )}
 
       {/* BTC/USD Price Container with video background */}

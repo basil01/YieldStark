@@ -1,7 +1,7 @@
 import { Contract, uint256 } from "starknet";
 import { WBTC, VESU_SINGLETON, VESU_GENESIS_POOL } from "~~/utils/Constants";
 
-// WBTC ERC20 ABI (minimal for approve)
+// ✅ Minimal ERC20 ABI for approve
 const wbtcABI = [
   {
     type: "function",
@@ -15,7 +15,7 @@ const wbtcABI = [
   }
 ];
 
-// Singleton ABI (minimal for deposit)
+// ✅ Minimal Singleton ABI for modify_position
 const singletonABI = [
   {
     type: "function",
@@ -29,22 +29,66 @@ const singletonABI = [
           { name: "collateral_asset", type: "ContractAddress" },
           { name: "debt_asset", type: "ContractAddress" },
           { name: "user", type: "ContractAddress" },
-          { name: "collateral", type: "struct", members: [
-            { name: "amount_type", type: "enum", variants: [{ name: "Delta", type: "()" }, { name: "Target", type: "()" }] },
-            { name: "denomination", type: "enum", variants: [{ name: "Native", type: "()" }, { name: "Assets", type: "()" }] },
-            { name: "value", type: "struct", members: [
-              { name: "abs", type: "Uint256" },
-              { name: "is_negative", type: "bool" }
-            ]}
-          ]},
-          { name: "debt", type: "struct", members: [
-            { name: "amount_type", type: "enum", variants: [{ name: "Delta", type: "()" }, { name: "Target", type: "()" }] },
-            { name: "denomination", type: "enum", variants: [{ name: "Native", type: "()" }, { name: "Assets", type: "()" }] },
-            { name: "value", type: "struct", members: [
-              { name: "abs", type: "Uint256" },
-              { name: "is_negative", type: "bool" }
-            ]}
-          ]},
+          {
+            name: "collateral",
+            type: "struct",
+            members: [
+              {
+                name: "amount_type",
+                type: "enum",
+                variants: [
+                  { name: "Delta", type: "()" },
+                  { name: "Target", type: "()" }
+                ]
+              },
+              {
+                name: "denomination",
+                type: "enum",
+                variants: [
+                  { name: "Native", type: "()" },
+                  { name: "Assets", type: "()" }
+                ]
+              },
+              {
+                name: "value",
+                type: "struct",
+                members: [
+                  { name: "abs", type: "Uint256" },
+                  { name: "is_negative", type: "bool" }
+                ]
+              }
+            ]
+          },
+          {
+            name: "debt",
+            type: "struct",
+            members: [
+              {
+                name: "amount_type",
+                type: "enum",
+                variants: [
+                  { name: "Delta", type: "()" },
+                  { name: "Target", type: "()" }
+                ]
+              },
+              {
+                name: "denomination",
+                type: "enum",
+                variants: [
+                  { name: "Native", type: "()" },
+                  { name: "Assets", type: "()" }
+                ]
+              },
+              {
+                name: "value",
+                type: "struct",
+                members: [
+                  { name: "abs", type: "Uint256" },
+                  { name: "is_negative", type: "bool" }
+                ]
+              }
+            ]
+          },
           { name: "data", type: "felt252[]" }
         ]
       }
@@ -53,22 +97,38 @@ const singletonABI = [
       {
         type: "struct",
         members: [
-          { name: "collateral_delta", type: "struct", members: [
-            { name: "abs", type: "Uint256" },
-            { name: "is_negative", type: "bool" }
-          ]},
-          { name: "collateral_shares_delta", type: "struct", members: [
-            { name: "abs", type: "Uint256" },
-            { name: "is_negative", type: "bool" }
-          ]},
-          { name: "debt_delta", type: "struct", members: [
-            { name: "abs", type: "Uint256" },
-            { name: "is_negative", type: "bool" }
-          ]},
-          { name: "nominal_debt_delta", type: "struct", members: [
-            { name: "abs", type: "Uint256" },
-            { name: "is_negative", type: "bool" }
-          ]},
+          {
+            name: "collateral_delta",
+            type: "struct",
+            members: [
+              { name: "abs", type: "Uint256" },
+              { name: "is_negative", type: "bool" }
+            ]
+          },
+          {
+            name: "collateral_shares_delta",
+            type: "struct",
+            members: [
+              { name: "abs", type: "Uint256" },
+              { name: "is_negative", type: "bool" }
+            ]
+          },
+          {
+            name: "debt_delta",
+            type: "struct",
+            members: [
+              { name: "abs", type: "Uint256" },
+              { name: "is_negative", type: "bool" }
+            ]
+          },
+          {
+            name: "nominal_debt_delta",
+            type: "struct",
+            members: [
+              { name: "abs", type: "Uint256" },
+              { name: "is_negative", type: "bool" }
+            ]
+          },
           { name: "bad_debt", type: "Uint256" }
         ]
       }
@@ -77,24 +137,20 @@ const singletonABI = [
   }
 ];
 
-/**
- * Approve WBTC spending for Vesu Singleton
- * @param account The user's account
- * @param amount The amount to approve
- * @returns Transaction hash
- */
+// ✅ Approve WBTC spending
 export async function approveWBTC(account: any, amount: bigint): Promise<string> {
   try {
     const wbtcContract = new Contract(wbtcABI, WBTC, account);
     const amountUint256 = uint256.bnToUint256(amount);
-    
+
     console.log("Approving WBTC...");
-    console.log("Spender:", VESU_SINGLETON);
-    console.log("Amount:", amountUint256);
-    
+    console.log("Account:", account.address);
+    console.log("Spender (Singleton):", VESU_SINGLETON);
+    console.log("Amount (Uint256):", amountUint256);
+
     const result = await wbtcContract.approve(VESU_SINGLETON, amountUint256);
+
     console.log("Approve result:", result);
-    
     return result.transaction_hash;
   } catch (error) {
     console.error("Error in approveWBTC:", error);
@@ -102,16 +158,11 @@ export async function approveWBTC(account: any, amount: bigint): Promise<string>
   }
 }
 
-/**
- * Deposit WBTC to Vesu
- * @param account The user's account
- * @param amount The amount to deposit
- * @returns Transaction hash
- */
+// ✅ Deposit WBTC into Vesu via Singleton
 export async function depositToVesu(account: any, amount: bigint): Promise<string> {
   try {
     const singletonContract = new Contract(singletonABI, VESU_SINGLETON, account);
-    
+
     const params = {
       pool_id: VESU_GENESIS_POOL,
       collateral_asset: WBTC,
@@ -120,17 +171,17 @@ export async function depositToVesu(account: any, amount: bigint): Promise<strin
       collateral: {
         amount_type: { Delta: {} },
         denomination: { Assets: {} },
-        value: { 
+        value: {
           abs: uint256.bnToUint256(amount),
-          is_negative: false 
+          is_negative: false
         }
       },
       debt: {
         amount_type: { Delta: {} },
         denomination: { Assets: {} },
-        value: { 
+        value: {
           abs: uint256.bnToUint256(0n),
-          is_negative: false 
+          is_negative: false
         }
       },
       data: []
@@ -138,13 +189,13 @@ export async function depositToVesu(account: any, amount: bigint): Promise<strin
 
     console.log("Depositing to Vesu...");
     console.log("Params:", JSON.stringify(params, null, 2));
-    
+
     const result = await singletonContract.modify_position(params);
+
     console.log("Deposit result:", result);
-    
     return result.transaction_hash;
   } catch (error) {
     console.error("Error in depositToVesu:", error);
     throw error;
   }
-} 
+}

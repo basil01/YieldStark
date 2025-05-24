@@ -17,8 +17,9 @@ const vesuOracleAbi = [
 function spotEntry(wbtcAddress: string) {
   return { SpotEntry: wbtcAddress };
 }
+
 function medianMode() {
-  return [0, {}];
+  return { Median: {} };
 }
 
 export class VesuOracleService {
