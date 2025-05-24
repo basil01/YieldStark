@@ -29,8 +29,8 @@ export default function Home() {
             Automate Your Bitcoin Yield On YieldStark
           </h1>
           <p className='text-2xl font-medium text-gray-100 mb-8'>
-            YieldStark is an AI-powered automated agent that automatically finds
-            the best yield on Vesu & Ekubo and rotates your deposited BTC to it.
+          YieldStark is a non-custodial yield optimizer that intelligently allocates your Bitcoin (WBTC) into 
+          the most profitable DeFi opportunities across the Starknet ecosystem.
             Take profit while you're away and also redeposit into another Vault with best yield.
           </p>
 
