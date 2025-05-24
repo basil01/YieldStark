@@ -38,7 +38,7 @@ YieldStark solves the complexity of earning BTC-native yield through three core 
    -Real-time pool metrics and risk signals
    -Decentralized and verifiable price + yield data
 
-## 🤖 Sample Agent Decision Logic
+## 🤖 Agent Decision Logic
 
 ```ts
 import { VesuOracleService } from "../services/vesuOracle";
