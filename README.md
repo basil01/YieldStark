@@ -9,7 +9,7 @@
 YieldStark is a non-custodial yield optimizer that intelligently allocates Bitcoin (WBTC) into the most profitable DeFi opportunities across the Starknet ecosystem. Built with Next.js and Starknet, it provides a seamless experience for BTC holders to earn yield directly on their assets.
 
 <div align="center">
-  <img src="public/logo.png" alt="YieldStark Logo" width="200" height="200"/>
+  <img src="src="packages/nextjs/public/logo.jpg"" alt="YieldStark Logo" width="200" height="200"/>
 </div>
 
 ## 🎯 Problem Statement
