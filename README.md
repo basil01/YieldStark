@@ -15,9 +15,12 @@ YieldStark is a non-custodial yield optimizer that intelligently allocates Bitco
 ## 🎯 Problem Statement
 
 Bitcoin holders looking to earn yield face several significant roadblocks:
--Lack of Native Yield Options
--Yield strategies are spread across multiple protocols, requiring manual research bridging, and tracking.
--Navigating yield farming, bridging, and gas optimization is too technical for the typical BTC holder.
+
+    -Lack of Native Yield Options
+
+    -Yield strategies are spread across multiple protocols, requiring manual research bridging, and tracking.
+
+    -Navigating yield farming, bridging, and gas optimization is too technical for the typical BTC holder.
 
 ## 💡 Solution
 
